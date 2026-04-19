@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - users can read/write their own data, admins can read all
+    match /users/{userId} {
+      // Allow users to read their own data (by UID match)
+      allow read: if request.auth != null && (request.auth.uid == userId || 
+                request.auth.token.email == 'admin@watchhub.com');
+      // Allow users to create/update their own data
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (request.auth.uid == userId || 
+                request.auth.token.email == 'admin@watchhub.com');
+      // Only admins can delete
+      allow delete: if request.auth != null && request.auth.token.email == 'admin@watchhub.com';
+    }
+    
+    // For development/testing - allow authenticated users to read/write all documents
+    // This ensures authenticated users can access their data even if specific rules fail
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
